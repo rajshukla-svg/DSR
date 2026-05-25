@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartDSR — Sprint 11 | CDPHP → LTHC Migration</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#ededea;--bg4:#e8e6df;
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);
+  --blue-bg:#e6f1fb;--blue-text:#0c447c;--blue-mid:#185fa5;--blue-acc:#378add;
+  --green-bg:#eaf3de;--green-text:#27500a;--green-mid:#1d9e75;
+  --amber-bg:#faeeda;--amber-text:#633806;--amber-mid:#ba7517;
+  --red-bg:#fcebeb;--red-text:#791f1f;--red-mid:#a32d2d;
+  --gray-bg:#f1efe8;--gray-text:#444441;
+  --pink-bg:#fbeaf0;--pink-text:#72243e;
+  --radius:8px;--radius-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mono:'SF Mono','Consolas','Courier New',monospace;
+  --sidebar:210px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#242422;--bg3:#2c2c2a;--bg4:#343432;
+    --text:#f0ede6;--text2:#b4b2a9;--text3:#888780;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.18);
+    --blue-bg:#042c53;--blue-text:#b5d4f4;--blue-mid:#85b7eb;
+    --green-bg:#173404;--green-text:#c0dd97;--green-mid:#5dcaa5;
+    --amber-bg:#412402;--amber-text:#fac775;--amber-mid:#ef9f27;
+    --red-bg:#501313;--red-text:#f7c1c1;--red-mid:#f09595;
+    --gray-bg:#2c2c2a;--gray-text:#d3d1c7;
+    --pink-bg:#4b1528;--pink-text:#f4c0d1;
+  }
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg3);color:var(--text);font-size:13px}
+/* Layout */
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.content{flex:1;overflow-y:auto;padding:16px 18px}
+/* Sidebar */
+.sb-logo{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.sb-logo-title{font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.sb-logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sb-sprint{margin:8px 10px;background:var(--blue-bg);color:var(--blue-text);font-size:11px;font-weight:600;padding:5px 10px;border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between}
+.sb-sprint-dot{width:7px;height:7px;border-radius:50%;background:var(--green-mid)}
+.sb-sec{padding:12px 14px 4px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 12px;font-size:12px;color:var(--text2);cursor:pointer;border-radius:var(--radius);margin:1px 6px;transition:background .15s,color .15s;user-select:none}
+.sb-item i{font-size:16px;flex-shrink:0;width:18px;text-align:center}
+.sb-item span{flex:1}
+.sb-item:hover{background:var(--bg2);color:var(--text)}
+.sb-item.active{background:var(--blue-bg);color:var(--blue-text);font-weight:500}
+.sb-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;background:var(--red-bg);color:var(--red-text)}
+.sb-badge.amber{background:var(--amber-bg);color:var(--amber-text)}
+.sb-badge.blue{background:var(--blue-bg);color:var(--blue-text)}
+.sb-bottom{margin-top:auto;padding:10px 12px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:9px}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.av-blue{background:var(--blue-bg);color:var(--blue-text)}
+.av-green{background:var(--green-bg);color:var(--green-text)}
+.av-amber{background:var(--amber-bg);color:var(--amber-text)}
+.av-pink{background:var(--pink-bg);color:var(--pink-text)}
+.sb-user-name{font-size:12px;font-weight:500;color:var(--text)}
+.sb-user-role{font-size:10px;color:var(--text3)}
+/* Topbar */
+.tb-title{font-size:15px;font-weight:600;color:var(--text)}
+.tb-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.tb-spacer{flex:1}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;white-space:nowrap;font-family:var(--font);transition:background .15s}
+.tb-btn:hover{background:var(--bg2);color:var(--text)}
+.tb-btn i{font-size:14px}
+.tb-btn.primary{background:var(--blue-mid);color:#fff;border-color:var(--blue-mid)}
+.tb-btn.primary:hover{background:var(--blue-acc)}
+.tb-btn.success{background:var(--green-mid);color:#fff;border-color:var(--green-mid)}
+.tb-search{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text3);font-size:12px;min-width:180px}
+.tb-search input{border:none;background:transparent;outline:none;font-size:12px;color:var(--text);font-family:var(--font);flex:1}
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.mc{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:default}
+.mc-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+.mc-val{font-size:26px;font-weight:600;line-height:1}
+.mc-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.mc-trend{font-size:10px;margin-top:4px;display:flex;align-items:center;gap:3px}
+.mc.blue .mc-val{color:var(--blue-mid)}
+.mc.green .mc-val{color:var(--green-mid)}
+.mc.amber .mc-val{color:var(--amber-mid)}
+.mc.red .mc-val{color:var(--red-mid)}
+.mc.gray .mc-val{color:var(--text2)}
+/* Grid layouts */
+.grid-2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.grid-equal{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:14px}
+/* Panel */
+.panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.ph{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+.ph-title{font-size:12px;font-weight:600;color:var(--text);flex:1;display:flex;align-items:center;gap:6px}
+.ph-title i{font-size:15px;color:var(--text3)}
+.ph-actions{display:flex;gap:4px}
+.icon-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:15px;transition:background .15s}
+.icon-btn:hover{background:var(--bg2);color:var(--text)}
+/* Tabs */
+.tabs{display:flex;gap:0;padding:0 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+.tab{font-size:11px;padding:8px 12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;user-select:none;white-space:nowrap}
+.tab.active{color:var(--blue-mid);border-bottom-color:var(--blue-mid);font-weight:600}
+.tab:hover:not(.active){color:var(--text)}
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+table.t th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);border-bottom:1px solid var(--border);background:var(--bg2);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+table.t td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+table.t tr:last-child td{border-bottom:none}
+table.t tr:hover td{background:var(--bg2)}
+/* Pills */
+.pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.p-done{background:var(--green-bg);color:var(--green-text)}
+.p-prog{background:var(--blue-bg);color:var(--blue-text)}
+.p-block{background:var(--red-bg);color:var(--red-text)}
+.p-oos{background:var(--gray-bg);color:var(--gray-text)}
+.p-wait{background:var(--amber-bg);color:var(--amber-text)}
+/* Progress bar */
+.pbar{display:flex;align-items:center;gap:5px}
+.pbar-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;min-width:40px}
+.pbar-fill{height:100%;border-radius:3px}
+.pbar-num{font-size:10px;font-weight:600;min-width:28px;text-align:right}
+/* AzDo dot */
+.az-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+/* Sticky notes */
+.sticky-board{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.sticky{border-radius:var(--radius);padding:10px 12px;border:1px solid var(--border);position:relative}
+.sticky.y{background:#faeeda}
+.sticky.b{background:#e6f1fb}
+.sticky.g{background:#eaf3de}
+.sticky.pk{background:#fbeaf0}
+.sticky-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.sticky-author{font-size:11px;font-weight:600}
+.sticky.y .sticky-author{color:#854f0b}
+.sticky.b .sticky-author{color:var(--blue-mid)}
+.sticky.g .sticky-author{color:#3b6d11}
+.sticky.pk .sticky-author{color:#993556}
+.sticky-txt{font-size:11px;color:var(--text2);line-height:1.5}
+.sticky-date{font-size:10px;color:var(--text3);margin-top:6px}
+.sticky-del{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;border:none;background:transparent;color:var(--text3);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:0}
+.sticky:hover .sticky-del{opacity:1}
+.sticky-del:hover{background:var(--red-bg);color:var(--red-text)}
+.add-sticky-btn{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--text3);border:1px dashed var(--border2);border-radius:var(--radius);padding:12px;cursor:pointer;transition:background .15s;min-height:80px}
+.add-sticky-btn:hover{background:var(--bg2);color:var(--text)}
+/* Reminder items */
+.rm-list{display:flex;flex-direction:column;gap:0}
+.rm-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);transition:background .15s;cursor:default}
+.rm-item:last-child{border-bottom:none}
+.rm-item:hover{background:var(--bg2)}
+.rm-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.rm-icon.bell{color:var(--amber-mid)}
+.rm-icon.mail{color:var(--blue-mid)}
+.rm-icon.check{color:var(--green-mid)}
+.rm-icon.sync{color:var(--blue-mid)}
+.rm-txt{font-size:12px;font-weight:500;color:var(--text)}
+.rm-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.rm-time{margin-left:auto;font-size:11px;font-weight:600;flex-shrink:0;padding-left:8px}
+.rm-time.warn{color:var(--amber-mid)}
+.rm-time.ok{color:var(--green-mid)}
+.rm-time.info{color:var(--blue-mid)}
+/* AZDO sync table */
+.azdo-hdr{display:grid;grid-template-columns:65px 1fr 110px 90px 70px;gap:8px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.azdo-row-item{display:grid;grid-template-columns:65px 1fr 110px 90px 70px;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;transition:background .15s}
+.azdo-row-item:last-child{border-bottom:none}
+.azdo-row-item:hover{background:var(--bg2)}
+.az-id{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.az-title{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.az-sync-time{font-size:11px;color:var(--text3)}
+.az-link{font-size:11px;color:var(--blue-mid);cursor:pointer;display:flex;align-items:center;gap:3px}
+.az-link:hover{text-decoration:underline}
+/* Chart */
+.chart-wrap{padding:12px 14px}
+/* Modal overlay */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-lg);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.modal-hdr-title{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.modal-hdr-title i{font-size:16px;color:var(--blue-mid)}
+.modal-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.form-row{display:grid;gap:10px}
+.form-row.c2{grid-template-columns:1fr 1fr}
+.form-row.c3{grid-template-columns:1fr 1fr 1fr}
+.fl{display:flex;flex-direction:column;gap:4px}
+.fl label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px}
+.fl input,.fl select,.fl textarea{font-size:12px;padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-family:var(--font);outline:none;transition:border-color .15s}
+.fl input:focus,.fl select:focus,.fl textarea:focus{border-color:var(--blue-acc)}
+.fl textarea{resize:vertical;height:70px;line-height:1.5}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--border)}
+.btn{font-size:12px;padding:7px 16px;border-radius:var(--radius);cursor:pointer;font-family:var(--font);font-weight:500;border:1px solid var(--border2);background:var(--bg);color:var(--text2);transition:background .15s}
+.btn:hover{background:var(--bg2)}
+.btn.primary{background:var(--blue-mid);color:#fff;border-color:var(--blue-mid)}
+.btn.primary:hover{background:var(--blue-acc)}
+.btn.danger{background:var(--red-mid);color:#fff;border-color:var(--red-mid)}
+/* Popup reminder */
+.popup-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:2000;align-items:flex-end;justify-content:flex-end;padding:24px}
+.popup-bg.show{display:flex}
+.popup-card{background:var(--bg);border:1px solid var(--border2);border-radius:var(--radius-lg);width:340px;overflow:hidden}
+.popup-hdr{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--amber-bg);border-bottom:1px solid var(--border)}
+.popup-hdr-title{font-size:13px;font-weight:600;color:var(--amber-text);flex:1}
+.popup-hdr i{font-size:16px;color:var(--amber-mid)}
+.popup-body-inner{padding:14px}
+.popup-pbi-id{font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:2px}
+.popup-pbi-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.popup-last{font-size:11px;color:var(--text3);margin-bottom:10px;font-style:italic}
+.popup-body-inner textarea{width:100%;font-size:12px;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-family:var(--font);resize:none;height:72px;line-height:1.5;outline:none}
+.popup-body-inner textarea:focus{border-color:var(--blue-acc)}
+.status-picks{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sp{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);cursor:pointer;transition:all .15s}
+.sp:hover{opacity:.8}
+.sp.done{background:var(--green-bg);color:var(--green-text);border-color:#97c459}
+.sp.prog{background:var(--blue-bg);color:var(--blue-text);border-color:#85b7eb}
+.sp.block{background:var(--red-bg);color:var(--red-text);border-color:#f09595}
+.sp.active-pick{outline:2px solid var(--blue-acc);outline-offset:1px}
+.popup-footer-inner{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--border)}
+.popup-progress{font-size:11px;color:var(--text3)}
+/* Email modal */
+.email-preview{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:12px;line-height:1.7;color:var(--text2)}
+.email-preview strong{color:var(--text)}
+/* Section heading */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;margin-top:4px}
+.sec-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.sec-count{font-size:11px;color:var(--text3);background:var(--bg);border:1px solid var(--border);padding:1px 8px;border-radius:20px}
+/* Defect row */
+.def-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px}
+.def-row:last-child{border-bottom:none}
+.def-row:hover{background:var(--bg2)}
+.def-id{font-family:var(--mono);font-size:11px;color:var(--red-mid);font-weight:600;min-width:80px}
+/* Settings toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:12px;font-weight:500;color:var(--text)}
+.toggle-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;border-radius:20px;background:var(--bg3);border:1px solid var(--border2);cursor:pointer;transition:background .2s}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle input:checked+.toggle-slider{background:var(--green-mid);border-color:var(--green-mid)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+/* Mono */
+.mono{font-family:var(--mono);font-size:11px}
+/* Hidden page */
+.page{display:none}
+.page.active{display:block}
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:var(--radius-lg);font-size:12px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s}
+.toast.show{opacity:1;transform:translateY(0)}
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-title"><i class="ti ti-activity-heartbeat" style="color:#378add"></i>SmartDSR</div>
+      <div class="sb-logo-sub">CDPHP → LTHC Migration</div>
+    </div>
+    <div class="sb-sprint">
+      <span>Sprint 11 · Active</span>
+      <span class="sb-sprint-dot"></span>
+    </div>
+    <div class="sb-sec">Main</div>
+    <div class="sb-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></div>
+    <div class="sb-item" onclick="nav('tracker',this)"><i class="ti ti-list-check"></i><span>PBI Tracker</span><span class="sb-badge" id="nb-tracker">3</span></div>
+    <div class="sb-item" onclick="nav('analytics',this)"><i class="ti ti-chart-bar"></i><span>Analytics</span></div>
+    <div class="sb-item" onclick="nav('defects',this)"><i class="ti ti-bug"></i><span>Defects</span><span class="sb-badge" id="nb-defects">1</span></div>
+    <div class="sb-sec">Tools</div>
+    <div class="sb-item" onclick="nav('azdo',this)"><i class="ti ti-brand-azure"></i><span>AzDo Sync</span></div>
+    <div class="sb-item" onclick="nav('stickies',this)"><i class="ti ti-note"></i><span>Sticky Notes</span></div>
+    <div class="sb-item" onclick="nav('reminders',this)"><i class="ti ti-bell"></i><span>Reminders</span><span class="sb-badge amber" id="nb-rem">2</span></div>
+    <div class="sb-item" onclick="nav('email',this)"><i class="ti ti-mail"></i><span>Email Alerts</span></div>
+    <div class="sb-sec">Config</div>
+    <div class="sb-item" onclick="nav('settings',this)"><i class="ti ti-settings"></i><span>Settings</span></div>
+    <div class="sb-item" onclick="nav('team',this)"><i class="ti ti-users"></i><span>Team</span></div>
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="avatar av-blue">RJ</div>
+        <div>
+          <div class="sb-user-name">Raj</div>
+          <div class="sb-user-role">QA Engineer · Cognizant</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div>
+        <div class="tb-title" id="page-title">Dashboard</div>
+        <div class="tb-sub">Sprint 11 · May 25, 2026 · TSTA</div>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><i class="ti ti-search" style="font-size:14px"></i><input type="text" placeholder="Search PBI, UID, assignee..." oninput="globalSearch(this.value)"></div>
+      <button class="tb-btn" onclick="syncAzdo()"><i class="ti ti-refresh"></i>Sync AzDo</button>
+      <button class="tb-btn" onclick="showModal('importModal')"><i class="ti ti-upload"></i>Import DSR</button>
+      <button class="tb-btn" onclick="showModal('reminderPopup')"><i class="ti ti-bell"></i>Daily Nudge</button>
+      <button class="tb-btn primary" onclick="showModal('insertModal')"><i class="ti ti-plus"></i>Insert PBI</button>
+    </div>
+
+    <!-- CONTENT PAGES -->
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="metrics" id="dash-metrics"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="ph">
+              <span class="ph-title"><i class="ti ti-list-check"></i>Sprint 11 — PBI status</span>
+              <div class="ph-actions">
+                <select id="dash-filter-assignee" onchange="renderDashTable()" style="font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer">
+                  <option value="all">All assignees</option>
+                  <option value="Raj">Raj</option>
+                  <option value="Roshan">Roshan</option>
+                  <option value="Katyayani">Katyayani</option>
+                  <option value="Ruchi">Ruchi</option>
+                  <option value="Jesmax">Jesmax</option>
+                  <option value="Shalini">Shalini</option>
+                  <option value="Yogesh">Yogesh</option>
+                </select>
+                <button class="icon-btn" onclick="showModal('insertModal')" title="Add PBI"><i class="ti ti-plus"></i></button>
+                <button class="icon-btn" onclick="exportCSV()" title="Export CSV"><i class="ti ti-download"></i></button>
+              </div>
+            </div>
+            <div class="tabs">
+              <span class="tab active" onclick="switchTab(this,'all')">All</span>
+              <span class="tab" onclick="switchTab(this,'Enhancement')">Enhancement</span>
+              <span class="tab" onclick="switchTab(this,'Non-Enh')">Non-Enh</span>
+              <span class="tab" onclick="switchTab(this,'Spill-over')">Spill-over</span>
+            </div>
+            <div class="tbl-wrap">
+              <table class="t" style="table-layout:fixed">
+                <colgroup><col width="65"><col><col width="85"><col width="100"><col width="80"><col width="75"></colgroup>
+                <thead><tr><th>PBI</th><th>Description</th><th>Assignee</th><th>Status</th><th>Progress</th><th>AzDo</th></tr></thead>
+                <tbody id="dash-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="panel">
+              <div class="ph"><span class="ph-title"><i class="ti ti-note"></i>Sticky notes</span><button class="icon-btn" onclick="showModal('stickyModal')" title="Add note"><i class="ti ti-plus"></i></button></div>
+              <div class="sticky-board" id="dash-stickies"></div>
+            </div>
+            <div class="panel">
+              <div class="ph"><span class="ph-title"><i class="ti ti-bell"></i>Today's reminders</span></div>
+              <div class="rm-list" id="dash-reminders"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:14px">
+          <div class="ph"><span class="ph-title"><i class="ti ti-brand-azure"></i>Azure DevOps — live sync status</span>
+            <div class="ph-actions"><button class="icon-btn" onclick="syncAzdo()" title="Sync now"><i class="ti ti-refresh"></i></button></div>
+          </div>
+          <div class="azdo-hdr"><span>PBI ID</span><span>Title</span><span>AzDo status</span><span>Last synced</span><span>Link</span></div>
+          <div id="azdo-rows-dash"></div>
+        </div>
+      </div>
+
+      <!-- PBI TRACKER PAGE -->
+      <div class="page" id="page-tracker">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-list-check"></i>PBI Tracker — all sprints</span>
+          <div style="display:flex;gap:8px">
+            <select id="tracker-status-filter" onchange="renderTracker()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg2);color:var(--text)">
+              <option value="all">All statuses</option><option>Completed</option><option>In Progress</option><option>Blocked</option><option>OOS</option>
+            </select>
+            <button class="tb-btn primary" onclick="showModal('insertModal')"><i class="ti ti-plus"></i>Add PBI</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="tbl-wrap">
+            <table class="t" style="table-layout:auto">
+              <thead><tr><th>PBI</th><th>UID / Title</th><th>Type</th><th>Assignee</th><th>Sprint</th><th>Status</th><th>%</th><th>Comment</th><th>AzDo</th><th>Actions</th></tr></thead>
+              <tbody id="tracker-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS PAGE -->
+      <div class="page" id="page-analytics">
+        <div class="grid-equal" style="margin-bottom:14px">
+          <div class="panel"><div class="ph"><span class="ph-title"><i class="ti ti-chart-pie"></i>Status distribution</span></div>
+            <div class="chart-wrap"><div style="position:relative;height:220px"><canvas id="pieChart" role="img" aria-label="PBI status pie chart">Status distribution.</canvas></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11px;color:var(--text3)" id="pie-legend"></div></div>
+          </div>
+          <div class="panel"><div class="ph"><span class="ph-title"><i class="ti ti-chart-bar"></i>PBIs per assignee</span></div>
+            <div class="chart-wrap"><div style="position:relative;height:220px"><canvas id="barChart" role="img" aria-label="PBIs per assignee bar chart">Assignee distribution.</canvas></div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="ph-title"><i class="ti ti-trending-up"></i>Sprint progress over time (mock)</span></div>
+          <div class="chart-wrap"><div style="position:relative;height:200px"><canvas id="lineChart" role="img" aria-label="Sprint progress line chart">Sprint progress.</canvas></div></div>
+        </div>
+      </div>
+
+      <!-- DEFECTS PAGE -->
+      <div class="page" id="page-defects">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-bug"></i>Defect tracker</span>
+          <button class="tb-btn primary" onclick="showModal('defectModal')"><i class="ti ti-plus"></i>Log defect</button>
+        </div>
+        <div class="panel">
+          <div class="tbl-wrap">
+            <table class="t" style="table-layout:auto">
+              <thead><tr><th>Defect ID</th><th>PBI</th><th>Title</th><th>Severity</th><th>Assignee</th><th>Status</th><th>Raised</th><th>Resolved</th></tr></thead>
+              <tbody id="defect-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AZDO SYNC PAGE -->
+      <div class="page" id="page-azdo">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-brand-azure"></i>Azure DevOps sync</span>
+          <button class="tb-btn success" onclick="syncAzdo()"><i class="ti ti-refresh"></i>Sync now</button>
+        </div>
+        <div class="panel" style="margin-bottom:14px">
+          <div class="ph"><span class="ph-title">Connection settings</span></div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="fl"><label>Organization URL</label><input type="text" value="https://dev.azure.com/LTHC" placeholder="AzDo org URL"></div>
+            <div class="fl"><label>Project name</label><input type="text" value="CDPHP-Migration" placeholder="Project name"></div>
+            <div class="fl"><label>PAT token</label><input type="password" value="••••••••••••••••" placeholder="Personal Access Token"></div>
+          </div>
+          <div style="padding:0 14px 14px;display:flex;gap:8px">
+            <button class="btn primary">Save &amp; test connection</button>
+            <button class="btn">Disconnect</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="azdo-hdr"><span>PBI ID</span><span>Title</span><span>AzDo status</span><span>Last synced</span><span>Link</span></div>
+          <div id="azdo-rows-page"></div>
+        </div>
+      </div>
+
+      <!-- STICKIES PAGE -->
+      <div class="page" id="page-stickies">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-note"></i>Sticky notes board</span>
+          <button class="tb-btn primary" onclick="showModal('stickyModal')"><i class="ti ti-plus"></i>New note</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px" id="stickies-page"></div>
+      </div>
+
+      <!-- REMINDERS PAGE -->
+      <div class="page" id="page-reminders">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-bell"></i>Reminders &amp; schedule</span>
+          <button class="tb-btn primary" onclick="showModal('reminderModal')"><i class="ti ti-plus"></i>Add reminder</button>
+        </div>
+        <div class="panel" style="margin-bottom:14px">
+          <div class="ph"><span class="ph-title">Daily update nudge settings</span></div>
+          <div class="toggle-row"><div><div class="toggle-label">Enable daily PBI update popup</div><div class="rm-sub">Shows a sticky nudge at your set time each day</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div><div class="toggle-label">Nudge time</div><div class="rm-sub">When to show the reminder popup</div></div><input type="time" value="17:00" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--bg2);color:var(--text)"></div>
+          <div class="toggle-row"><div><div class="toggle-label">Only remind for stale PBIs</div><div class="rm-sub">Only ping if last comment is older than 1 day</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="ph-title">All reminders</span></div>
+          <div class="rm-list" id="reminders-list"></div>
+        </div>
+      </div>
+
+      <!-- EMAIL PAGE -->
+      <div class="page" id="page-email">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-mail"></i>Email alerts &amp; digest</span>
+          <button class="tb-btn primary" onclick="sendEmailDigest()"><i class="ti ti-send"></i>Send digest now</button>
+        </div>
+        <div class="panel" style="margin-bottom:14px">
+          <div class="ph"><span class="ph-title">Email settings</span></div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="fl"><label>Recipients</label><input type="text" value="Danie, Revathi, Mary Ann" placeholder="Comma-separated emails"></div>
+            <div class="fl"><label>CC</label><input type="text" value="Samayeeta, Roshan" placeholder="CC recipients"></div>
+            <div class="fl"><label>Send time</label><input type="time" value="09:00"></div>
+            <div class="fl"><label>Frequency</label><select><option>Daily (weekdays)</option><option>Daily (all days)</option><option>End of sprint</option><option>Manual only</option></select></div>
+          </div>
+          <div style="padding:0 14px 14px;display:flex;gap:8px">
+            <button class="btn primary">Save settings</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="ph-title">Email preview — today's digest</span><button class="icon-btn" onclick="sendEmailDigest()" title="Send now"><i class="ti ti-send"></i></button></div>
+          <div style="padding:14px">
+            <div class="email-preview" id="email-preview-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-settings"></i>Preferences</span></div>
+        <div class="panel" style="margin-bottom:14px">
+          <div class="ph"><span class="ph-title">Dashboard settings</span></div>
+          <div class="toggle-row"><div><div class="toggle-label">Auto-sync with Azure DevOps</div><div class="rm-sub">Pull latest PBI status every 30 minutes</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div><div class="toggle-label">Daily email digest</div><div class="rm-sub">Send summary email at 9:00 AM</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div><div class="toggle-label">Daily update popup nudge</div><div class="rm-sub">Pop-up reminder to update PBIs at 5:00 PM</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div><div class="toggle-label">Show OOS items in tracker</div><div class="rm-sub">Include out-of-scope PBIs in tables</div></div><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+          <div class="toggle-row"><div><div class="toggle-label">Defect badge alerts</div><div class="rm-sub">Show red badge on sidebar for open defects</div></div><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><span class="ph-title">Sprint configuration</span></div>
+          <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="fl"><label>Current sprint</label><input type="text" value="Sprint 11"></div>
+            <div class="fl"><label>Sprint start</label><input type="date" value="2026-05-19"></div>
+            <div class="fl"><label>Sprint end</label><input type="date" value="2026-05-30"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEAM PAGE -->
+      <div class="page" id="page-team">
+        <div class="sec-hdr"><span class="sec-title"><i class="ti ti-users"></i>Team members</span></div>
+        <div class="panel">
+          <div class="tbl-wrap">
+            <table class="t" style="table-layout:auto">
+              <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>PBIs (Sprint 11)</th><th>Completed</th><th>In Progress</th></tr></thead>
+              <tbody id="team-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- INSERT PBI MODAL -->
+<div class="modal-bg" id="insertModal">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-hdr-title"><i class="ti ti-plus"></i>Insert / edit PBI</span><button class="icon-btn" onclick="hideModal('insertModal')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="fl"><label>PBI ID *</label><input type="text" id="f-pbi" placeholder="e.g. 810022"></div>
+        <div class="fl"><label>UID / Title *</label><input type="text" id="f-uid" placeholder="e.g. UID 550 Group ACH"></div>
+      </div>
+      <div class="form-row c3">
+        <div class="fl"><label>Type</label><select id="f-type"><option>Enhancement</option><option>Non-Enh</option><option>Spill-over</option></select></div>
+        <div class="fl"><label>Assignee</label><select id="f-assignee"><option>Raj</option><option>Roshan</option><option>Katyayani</option><option>Ruchi</option><option>Jesmax</option><option>Shalini</option><option>Yogesh</option><option>Samayeeta</option><option>Praba</option></select></div>
+        <div class="fl"><label>Sprint</label><input type="text" id="f-sprint" value="Sprint 11"></div>
+      </div>
+      <div class="form-row c3">
+        <div class="fl"><label>Status</label><select id="f-status"><option>In Progress</option><option>Completed</option><option>Blocked</option><option>OOS</option></select></div>
+        <div class="fl"><label>% Complete</label><input type="number" id="f-pct" value="0" min="0" max="100"></div>
+        <div class="fl"><label>AzDo link</label><input type="text" id="f-azdo" placeholder="https://dev.azure.com/..."></div>
+      </div>
+      <div class="fl"><label>Today's comment</label><textarea id="f-comment" placeholder="Describe today's progress, blockers, or next steps..."></textarea></div>
+      <div class="fl"><label>Open defect IDs (comma separated)</label><input type="text" id="f-defects" placeholder="e.g. 1403993, 1411717"></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="hideModal('insertModal')">Cancel</button><button class="btn primary" onclick="savePBI()">Save PBI</button></div>
+  </div>
+</div>
+
+<!-- STICKY NOTE MODAL -->
+<div class="modal-bg" id="stickyModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-hdr"><span class="modal-hdr-title"><i class="ti ti-note"></i>New sticky note</span><button class="icon-btn" onclick="hideModal('stickyModal')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="fl"><label>Author</label><select id="sn-author"><option>Raj</option><option>Roshan</option><option>Katyayani</option><option>Ruchi</option><option>Shalini</option></select></div>
+        <div class="fl"><label>Colour</label><select id="sn-color"><option value="y">Yellow</option><option value="b">Blue</option><option value="g">Green</option><option value="pk">Pink</option></select></div>
+      </div>
+      <div class="fl"><label>Note</label><textarea id="sn-text" placeholder="Type your note here..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="hideModal('stickyModal')">Cancel</button><button class="btn primary" onclick="saveSticky()">Add note</button></div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="importModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr"><span class="modal-hdr-title"><i class="ti ti-upload"></i>Import DSR file</span><button class="icon-btn" onclick="hideModal('importModal')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div style="border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:28px;text-align:center;color:var(--text3);cursor:pointer" onclick="toast('File picker coming soon — connect to backend!')">
+        <i class="ti ti-file-upload" style="font-size:32px;display:block;margin-bottom:8px"></i>
+        <div style="font-size:13px;font-weight:500;color:var(--text)">Drop DSR Excel file here</div>
+        <div style="font-size:11px;margin-top:4px">or click to browse · .xlsx, .csv supported</div>
+      </div>
+      <div class="fl" style="margin-top:4px"><label>Or paste AzDo query URL</label><input type="text" placeholder="https://dev.azure.com/org/project/_queries/..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="hideModal('importModal')">Cancel</button><button class="btn primary" onclick="toast('Import triggered!');hideModal('importModal')">Import</button></div>
+  </div>
+</div>
+
+<!-- DEFECT MODAL -->
+<div class="modal-bg" id="defectModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr"><span class="modal-hdr-title"><i class="ti ti-bug"></i>Log new defect</span><button class="icon-btn" onclick="hideModal('defectModal')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="form-row c2">
+        <div class="fl"><label>Defect ID</label><input type="text" id="d-id" placeholder="e.g. 1411717"></div>
+        <div class="fl"><label>Linked PBI</label><input type="text" id="d-pbi" placeholder="e.g. 810022"></div>
+      </div>
+      <div class="fl"><label>Title</label><input type="text" id="d-title" placeholder="Short description of the defect"></div>
+      <div class="form-row c2">
+        <div class="fl"><label>Severity</label><select id="d-sev"><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="fl"><label>Assignee</label><select id="d-assignee"><option>Raj</option><option>Roshan</option><option>Katyayani</option><option>Ruchi</option><option>Jesmax</option></select></div>
+      </div>
+      <div class="fl"><label>Notes</label><textarea id="d-notes" placeholder="Steps to reproduce, observations..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="hideModal('defectModal')">Cancel</button><button class="btn danger" onclick="saveDefect()">Log defect</button></div>
+  </div>
+</div>
+
+<!-- REMINDER MODAL -->
+<div class="modal-bg" id="reminderModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-hdr"><span class="modal-hdr-title"><i class="ti ti-bell"></i>Add reminder</span><button class="icon-btn" onclick="hideModal('reminderModal')"><i class="ti ti-x"></i></button></div>
+    <div class="modal-body">
+      <div class="fl"><label>Reminder text</label><input type="text" id="rm-text" placeholder="e.g. Follow up with Ramya on UID 550"></div>
+      <div class="form-row c2">
+        <div class="fl"><label>Time</label><input type="time" id="rm-time" value="17:00"></div>
+        <div class="fl"><label>Type</label><select id="rm-type"><option value="bell">Alert</option><option value="mail">Email</option><option value="check">Task</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn" onclick="hideModal('reminderModal')">Cancel</button><button class="btn primary" onclick="saveReminder()">Add</button></div>
+  </div>
+</div>
+
+<!-- DAILY NUDGE POPUP -->
+<div class="modal-bg" id="reminderPopup" style="align-items:flex-end;justify-content:flex-end;padding:24px">
+  <div class="popup-card">
+    <div class="popup-hdr">
+      <i class="ti ti-bell"></i>
+      <span class="popup-hdr-title">Time to update your PBIs — May 25</span>
+      <button class="icon-btn" onclick="hideModal('reminderPopup')" style="color:var(--amber-mid)"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="popup-body-inner" id="popup-body-inner">
+    </div>
+    <div class="popup-footer-inner">
+      <span class="popup-progress" id="popup-progress">PBI 1 of 3</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="nudgeSkip()">Skip</button>
+        <button class="btn primary" onclick="nudgeSave()">Save &amp; next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+var pbis=[
+  {pbi:'809764',uid:'Carry Forwarding Invoice',type:'Enhancement',assignee:'Raj',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/22: Invoices generated for Medicare Indv.',defects:'',azdo:'Synced'},
+  {pbi:'809765',uid:'Move Credit Balance (CHP)',type:'Enhancement',assignee:'Roshan',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/21: Invoices generated for 01/01/2027.',defects:'',azdo:'Synced'},
+  {pbi:'809766',uid:'Move Credit Balance (Medicare)',type:'Enhancement',assignee:'Katyayani',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/22: Invoices generated.',defects:'',azdo:'Synced'},
+  {pbi:'809767',uid:'Move Debit Balance (CHP)',type:'Enhancement',assignee:'Roshan',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/21: Invoices generated.',defects:'',azdo:'Synced'},
+  {pbi:'809768',uid:'Move Debit Balance (Medicare)',type:'Enhancement',assignee:'Katyayani',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/21: Invoices generated.',defects:'',azdo:'Synced'},
+  {pbi:'809769',uid:'Retroactivity Billing from Facets',type:'Enhancement',assignee:'Raj',sprint:'Sprint 11',status:'In Progress',pct:60,comment:'05/22: Waiting 131N extract for negative amounts.',defects:'',azdo:'Pending'},
+  {pbi:'810022',uid:'UID 550 Group ACH — Part 3',type:'Spill-over',assignee:'Roshan',sprint:'Sprint 11',status:'In Progress',pct:80,comment:'5/21: Awaiting BA confirmation. Defect 1403993 open.',defects:'1403993',azdo:'Active'},
+  {pbi:'809903',uid:'UID 700 Payment Receipt — Part 3',type:'Spill-over',assignee:'Jesmax',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/15: Execution completed. Defect 1379128 closed.',defects:'',azdo:'Synced'},
+  {pbi:'810069',uid:'UID 895 Subscriber Rebill — Part 3',type:'Spill-over',assignee:'Ruchi',sprint:'Sprint 11',status:'In Progress',pct:60,comment:'5/22: Execution in progress.',defects:'',azdo:'Active'},
+  {pbi:'810441',uid:'UID 136 Delinquency Print — Part 2',type:'Spill-over',assignee:'Katyayani',sprint:'Sprint 11',status:'Completed',pct:100,comment:'05/22: All letters generated successfully.',defects:'',azdo:'Synced'},
+  {pbi:'809983',uid:'UID 535 NYS CHP Payment — Part 3',type:'Spill-over',assignee:'Jesmax',sprint:'Sprint 11',status:'In Progress',pct:20,comment:'05/22: Output files generating, execution in progress.',defects:'',azdo:'Active'},
+  {pbi:'917068',uid:'MPWR Data Load for AR Purpose',type:'Non-Enh',assignee:'Shalini',sprint:'Sprint 11',status:'In Progress',pct:40,comment:"5/22: Nandan's team correcting file.",defects:'',azdo:'Active'},
+  {pbi:'917067',uid:'MPWR — Members not on premium withhold',type:'Non-Enh',assignee:'Shalini',sprint:'Sprint 11',status:'OOS',pct:0,comment:'5/22: Awaiting written OOS approval from Kaitlin.',defects:'',azdo:'N/A'},
+  {pbi:'916992',uid:'Monthly Bad Debt Write-Off Report',type:'Non-Enh',assignee:'Roshan',sprint:'Sprint 11',status:'OOS',pct:0,comment:'5/22: Out of scope — Srini and Kevin agree.',defects:'',azdo:'N/A'},
+];
+
+var stickies=[
+  {id:1,author:'Raj',color:'y',text:'Waiting for 131N extract files for retroactivity negative amounts. Follow up with Lakshmi.',date:'May 22'},
+  {id:2,author:'Roshan',color:'b',text:'UID 550 — defect 1403993 open. Awaiting BA confirmation from Ramya on altfund job.',date:'May 21'},
+  {id:3,author:'Katyayani',color:'g',text:'All delinquency letters generated. UID 136 fully closed.',date:'May 22'},
+  {id:4,author:'Shalini',color:'pk',text:'MPWR file issue — Nandan team correcting. Follow up tomorrow.',date:'May 22'},
+];
+
+var reminders=[
+  {id:1,icon:'bell',text:'Daily PBI status update due',sub:'3 PBIs pending today\'s comment',time:'5:00 PM',cls:'warn'},
+  {id:2,icon:'mail',text:'DSR email digest sent',sub:'Sent to Danie, Revathi, Mary Ann',time:'9:00 AM',cls:'info'},
+  {id:3,icon:'check',text:'AzDo sync completed',sub:'14 PBIs updated from Azure DevOps',time:'8:45 AM',cls:'ok'},
+  {id:4,icon:'bell',text:'Sprint 11 ends in 5 days',sub:'Review remaining in-progress PBIs',time:'EOD',cls:'warn'},
+];
+
+var defects=[
+  {id:'1403993',pbi:'810022',title:'Altfunding job not picking LOB 0021 data',sev:'High',assignee:'Roshan',status:'Open',raised:'May 15',resolved:'—'},
+  {id:'1379128',pbi:'809903',title:'Error reasons not populating in output',sev:'Medium',assignee:'Jesmax',status:'Closed',raised:'May 6',resolved:'May 15'},
+  {id:'1410280',pbi:'809983',title:'535 Job failing in Control-M — FTP path issue',sev:'High',assignee:'Jesmax',status:'Closed',raised:'May 20',resolved:'May 22'},
+];
+
+var team=[
+  {name:'Raj',role:'QA Engineer',email:'raj@cognizant.com',av:'RJ',avc:'av-blue'},
+  {name:'Roshan',role:'QA Engineer',email:'roshan@cognizant.com',av:'RS',avc:'av-green'},
+  {name:'Katyayani',role:'QA Engineer',email:'katyayani@cognizant.com',av:'KT',avc:'av-amber'},
+  {name:'Ruchi',role:'QA Engineer',email:'ruchi@cognizant.com',av:'RC',avc:'av-pink'},
+  {name:'Jesmax',role:'QA Engineer',email:'jesmax@cognizant.com',av:'JX',avc:'av-blue'},
+  {name:'Shalini',role:'QA Engineer',email:'shalini@cognizant.com',av:'SH',avc:'av-green'},
+  {name:'Yogesh',role:'QA Engineer',email:'yogesh@cognizant.com',av:'YG',avc:'av-amber'},
+  {name:'Samayeeta',role:'QA Lead',email:'samayeeta@cognizant.com',av:'SM',avc:'av-pink'},
+  {name:'Praba',role:'QA Engineer',email:'praba@cognizant.com',av:'PR',avc:'av-blue'},
+];
+
+var currentTab='all';
+var nudgeIdx=0;
+var nudgePBIs=[];
+var nudgeStatus='In Progress';
+
+function statusClass(s){
+  if(s==='Completed')return 'p-done';
+  if(s==='In Progress')return 'p-prog';
+  if(s==='Blocked')return 'p-block';
+  if(s==='OOS')return 'p-oos';
+  return 'p-wait';
+}
+function pctColor(p){return p>=80?'#1d9e75':p>=40?'#ba7517':'#a32d2d';}
+function pbar(p){return '<div class="pbar"><span class="pbar-track"><span class="pbar-fill" style="width:'+p+'%;background:'+pctColor(p)+'"></span></span><span class="pbar-num" style="color:'+pctColor(p)+'">'+p+'%</span></div>';}
+function azdoDot(s){var c=s==='Synced'?'#1d9e75':s==='Active'?'#185fa5':s==='Pending'?'#ba7517':s==='Defect'?'#a32d2d':'#888780';return '<span class="az-dot" style="background:'+c+'"></span>';}
+
+function nav(page,el){
+  document.querySelectorAll('.sb-item').forEach(function(i){i.classList.remove('active');});
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-'+page).classList.add('active');
+  var titles={dashboard:'Dashboard',tracker:'PBI Tracker',analytics:'Analytics',defects:'Defects',azdo:'AzDo Sync',stickies:'Sticky Notes',reminders:'Reminders',email:'Email Alerts',settings:'Settings',team:'Team'};
+  document.getElementById('page-title').textContent=titles[page]||page;
+  if(page==='analytics')buildCharts();
+  if(page==='tracker')renderTracker();
+  if(page==='stickies')renderStickiesPage();
+  if(page==='reminders')renderRemindersPage();
+  if(page==='defects')renderDefects();
+  if(page==='azdo')renderAzdoPage();
+  if(page==='team')renderTeam();
+  if(page==='email')renderEmailPreview();
+}
+
+function renderMetrics(){
+  var inScope=pbis.filter(function(p){return p.status!=='OOS';});
+  var done=inScope.filter(function(p){return p.status==='Completed';}).length;
+  var prog=inScope.filter(function(p){return p.status==='In Progress';}).length;
+  var blk=inScope.filter(function(p){return p.status==='Blocked';}).length;
+  var openDef=defects.filter(function(d){return d.status==='Open';}).length;
+  document.getElementById('nb-defects').textContent=openDef;
+  document.getElementById('nb-tracker').textContent=prog;
+  document.getElementById('dash-metrics').innerHTML=
+    '<div class="mc blue"><div class="mc-label"><i class="ti ti-list-check" style="font-size:12px"></i> Total PBIs</div><div class="mc-val">'+inScope.length+'</div><div class="mc-sub">sprint 11</div></div>'+
+    '<div class="mc green"><div class="mc-label">Completed</div><div class="mc-val">'+done+'</div><div class="mc-sub">'+Math.round(done/inScope.length*100)+'% done</div></div>'+
+    '<div class="mc blue"><div class="mc-label">In progress</div><div class="mc-val">'+prog+'</div><div class="mc-sub">active execution</div></div>'+
+    '<div class="mc '+(blk>0?'red':'green')+'"><div class="mc-label">Blocked</div><div class="mc-val">'+blk+'</div><div class="mc-sub">'+(blk>0?'needs attention':'all clear')+'</div></div>'+
+    '<div class="mc '+(openDef>0?'amber':'green')+'"><div class="mc-label">Open defects</div><div class="mc-val">'+openDef+'</div><div class="mc-sub">AzDo tracked</div></div>';
+}
+
+function renderDashTable(){
+  var assignee=document.getElementById('dash-filter-assignee').value;
+  var rows=pbis.filter(function(p){
+    if(assignee!=='all'&&p.assignee!==assignee)return false;
+    if(currentTab!=='all'&&p.type!==currentTab)return false;
+    return true;
+  });
+  var html=rows.map(function(r){
+    return '<tr><td class="mono">'+r.pbi+'</td><td style="font-size:12px">'+r.uid+'</td><td>'+r.assignee+'</td><td><span class="pill '+statusClass(r.status)+'">'+r.status+'</span></td><td>'+pbar(r.pct)+'</td><td style="font-size:11px">'+azdoDot(r.azdo)+r.azdo+'</td></tr>';
+  }).join('');
+  document.getElementById('dash-table-body').innerHTML=html||'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text3);font-size:12px">No PBIs match filter</td></tr>';
+}
+
+function switchTab(el,tab){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  currentTab=tab;
+  renderDashTable();
+}
+
+function renderDashStickies(){
+  var html=stickies.slice(0,4).map(function(s){
+    return '<div class="sticky '+s.color+'"><button class="sticky-del" onclick="deleteSticky('+s.id+')"><i class="ti ti-x"></i></button><div class="sticky-hdr"><span class="sticky-author">'+s.author+'</span><i class="ti ti-pin" style="font-size:12px"></i></div><div class="sticky-txt">'+s.text+'</div><div class="sticky-date">'+s.date+'</div></div>';
+  }).join('');
+  html+='<div class="add-sticky-btn" onclick="showModal(\'stickyModal\')"><i class="ti ti-plus" style="font-size:14px"></i>Add note</div>';
+  document.getElementById('dash-stickies').innerHTML=html;
+}
+
+function renderDashReminders(){
+  var html=reminders.slice(0,4).map(function(r){
+    return '<div class="rm-item"><i class="ti ti-'+r.icon+' rm-icon '+r.icon+'" style="margin-top:2px"></i><div><div class="rm-txt">'+r.text+'</div><div class="rm-sub">'+r.sub+'</div></div><span class="rm-time '+r.cls+'">'+r.time+'</span></div>';
+  }).join('');
+  document.getElementById('dash-reminders').innerHTML=html;
+}
+
+function renderAzdoRows(elId){
+  var rows=pbis.filter(function(p){return p.status!=='OOS';}).slice(0,8).map(function(r){
+    return '<div class="azdo-row-item"><span class="az-id">'+r.pbi+'</span><span class="az-title">'+r.uid+'</span><span><span class="pill '+statusClass(r.status)+'">'+r.azdo+'</span></span><span class="az-sync-time">'+( r.status==='Completed'?'5 min ago':'2 min ago')+'</span><span class="az-link"><i class="ti ti-external-link" style="font-size:12px"></i>Open</span></div>';
+  }).join('');
+  var el=document.getElementById(elId);
+  if(el)el.innerHTML=rows;
+}
+
+function renderTracker(){
+  var statusF=document.getElementById('tracker-status-filter').value;
+  var rows=pbis.filter(function(p){return statusF==='all'||p.status===statusF;});
+  document.getElementById('tracker-body').innerHTML=rows.map(function(r){
+    return '<tr><td class="mono">'+r.pbi+'</td><td style="font-size:12px">'+r.uid+'</td><td><span class="pill p-oos" style="font-size:10px">'+r.type+'</span></td><td>'+r.assignee+'</td><td style="font-size:11px;color:var(--text3)">'+r.sprint+'</td><td><span class="pill '+statusClass(r.status)+'">'+r.status+'</span></td><td>'+pbar(r.pct)+'</td><td style="font-size:11px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.comment+'">'+r.comment+'</td><td style="font-size:11px">'+azdoDot(r.azdo)+r.azdo+'</td><td><button class="icon-btn" onclick="editPBI(\''+r.pbi+'\')" title="Edit"><i class="ti ti-edit"></i></button><button class="icon-btn" onclick="deletePBI(\''+r.pbi+'\')" title="Delete" style="color:var(--red-mid)"><i class="ti ti-trash"></i></button></td></tr>';
+  }).join('');
+}
+
+function renderDefects(){
+  document.getElementById('defect-body').innerHTML=defects.map(function(d){
+    var sc=d.status==='Open'?'p-block':'p-done';
+    var sevc=d.sev==='High'?'p-block':d.sev==='Medium'?'p-wait':'p-oos';
+    return '<tr><td><span style="font-family:var(--mono);font-size:11px;color:var(--red-mid);font-weight:600">'+d.id+'</span></td><td class="mono">'+d.pbi+'</td><td>'+d.title+'</td><td><span class="pill '+sevc+'">'+d.sev+'</span></td><td>'+d.assignee+'</td><td><span class="pill '+sc+'">'+d.status+'</span></td><td style="font-size:11px;color:var(--text3)">'+d.raised+'</td><td style="font-size:11px;color:var(--text3)">'+d.resolved+'</td></tr>';
+  }).join('');
+}
+
+function renderStickiesPage(){
+  document.getElementById('stickies-page').innerHTML=stickies.map(function(s){
+    return '<div class="sticky '+s.color+'" style="min-height:120px"><button class="sticky-del" onclick="deleteSticky('+s.id+')"><i class="ti ti-x"></i></button><div class="sticky-hdr"><span class="sticky-author">'+s.author+'</span><i class="ti ti-pin" style="font-size:12px"></i></div><div class="sticky-txt">'+s.text+'</div><div class="sticky-date">'+s.date+'</div></div>';
+  }).join('')+'<div class="add-sticky-btn" onclick="showModal(\'stickyModal\')" style="min-height:120px"><i class="ti ti-plus" style="font-size:20px"></i><span>Add note</span></div>';
+}
+
+function renderRemindersPage(){
+  document.getElementById('reminders-list').innerHTML=reminders.map(function(r){
+    return '<div class="rm-item"><i class="ti ti-'+r.icon+' rm-icon '+r.icon+'"></i><div><div class="rm-txt">'+r.text+'</div><div class="rm-sub">'+r.sub+'</div></div><span class="rm-time '+r.cls+'">'+r.time+'</span><button class="icon-btn" onclick="deleteReminder('+r.id+')" style="color:var(--red-mid)"><i class="ti ti-trash"></i></button></div>';
+  }).join('');
+}
+
+function renderAzdoPage(){renderAzdoRows('azdo-rows-page');}
+
+function renderTeam(){
+  document.getElementById('team-body').innerHTML=team.map(function(m){
+    var myPBIs=pbis.filter(function(p){return p.assignee===m.name&&p.status!=='OOS';});
+    var done=myPBIs.filter(function(p){return p.status==='Completed';}).length;
+    var prog=myPBIs.filter(function(p){return p.status==='In Progress';}).length;
+    return '<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar '+m.avc+'" style="width:26px;height:26px;font-size:10px">'+m.av+'</div>'+m.name+'</div></td><td style="color:var(--text3);font-size:12px">'+m.role+'</td><td style="font-size:11px;color:var(--blue-mid)">'+m.email+'</td><td style="text-align:center">'+myPBIs.length+'</td><td style="text-align:center;color:var(--green-mid);font-weight:600">'+done+'</td><td style="text-align:center;color:var(--blue-mid)">'+prog+'</td></tr>';
+  }).join('');
+}
+
+function renderEmailPreview(){
+  var done=pbis.filter(function(p){return p.status==='Completed';});
+  var prog=pbis.filter(function(p){return p.status==='In Progress';});
+  var oos=pbis.filter(function(p){return p.status==='OOS';});
+  document.getElementById('email-preview-body').innerHTML=
+    '<strong>Subject: DSR Update — Sprint 11 | CDPHP→LTHC | May 25, 2026</strong><br><br>'+
+    'Hi Team,<br><br>'+
+    'Please find today\'s DSR summary for Sprint 11:<br><br>'+
+    '<strong>Completed ('+done.length+'):</strong><br>'+
+    done.map(function(p){return '&nbsp;&nbsp;• '+p.pbi+' — '+p.uid+' ('+p.assignee+')<br>';}).join('')+
+    '<br><strong>In Progress ('+prog.length+'):</strong><br>'+
+    prog.map(function(p){return '&nbsp;&nbsp;• '+p.pbi+' — '+p.uid+' | '+p.pct+'% | '+p.comment.substring(0,60)+'...<br>';}).join('')+
+    '<br><strong>OOS / Pending approval ('+oos.length+'):</strong><br>'+
+    oos.map(function(p){return '&nbsp;&nbsp;• '+p.pbi+' — '+p.uid+'<br>';}).join('')+
+    '<br>Regards,<br>SmartDSR · CDPHP Migration QA Team';
+}
+
+var pieInst=null,barInst=null,lineInst=null;
+function buildCharts(){
+  var sc={Completed:0,'In Progress':0,Blocked:0,OOS:0};
+  pbis.forEach(function(p){if(p.status in sc)sc[p.status]++;});
+  var cols=['#1d9e75','#185fa5','#a32d2d','#888780'];
+  if(pieInst)pieInst.destroy();
+  pieInst=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{labels:Object.keys(sc),datasets:[{data:Object.values(sc),backgroundColor:cols,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  document.getElementById('pie-legend').innerHTML=Object.keys(sc).map(function(k,i){return '<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:'+cols[i]+';display:inline-block"></span>'+k+': '+sc[k]+'</span>';}).join('');
+  var ac={};
+  pbis.forEach(function(p){ac[p.assignee]=(ac[p.assignee]||0)+1;});
+  var names=Object.keys(ac);
+  if(barInst)barInst.destroy();
+  barInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:names,datasets:[{data:names.map(function(n){return ac[n];}),backgroundColor:'#378add',borderRadius:4,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{stepSize:1,font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+  if(lineInst)lineInst.destroy();
+  lineInst=new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:['Week 1','Week 2','Week 3','Week 4','Week 5'],datasets:[{label:'Completed',data:[2,4,6,8,10],borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.08)',tension:.4,fill:true},{label:'In Progress',data:[5,5,4,4,3],borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.05)',tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{stepSize:2,font:{size:10}},grid:{color:'rgba(128,128,128,0.08)'}}}}});
+}
+
+function showModal(id){document.getElementById(id).classList.add('show');}
+function hideModal(id){document.getElementById(id).classList.remove('show');}
+
+function savePBI(){
+  var p={pbi:document.getElementById('f-pbi').value.trim(),uid:document.getElementById('f-uid').value.trim(),type:document.getElementById('f-type').value,assignee:document.getElementById('f-assignee').value,sprint:document.getElementById('f-sprint').value,status:document.getElementById('f-status').value,pct:parseInt(document.getElementById('f-pct').value)||0,comment:document.getElementById('f-comment').value,defects:document.getElementById('f-defects').value,azdo:'Pending'};
+  if(!p.pbi||!p.uid){toast('PBI ID and title are required');return;}
+  var idx=pbis.findIndex(function(x){return x.pbi===p.pbi;});
+  if(idx>=0)pbis[idx]=p; else pbis.push(p);
+  hideModal('insertModal');
+  renderMetrics();renderDashTable();renderDashStickies();renderDashReminders();renderAzdoRows('azdo-rows-dash');
+  toast('PBI '+p.pbi+' saved!');
+}
+
+function editPBI(id){
+  var p=pbis.find(function(x){return x.pbi===id;});
+  if(!p)return;
+  document.getElementById('f-pbi').value=p.pbi;
+  document.getElementById('f-uid').value=p.uid;
+  document.getElementById('f-type').value=p.type;
+  document.getElementById('f-assignee').value=p.assignee;
+  document.getElementById('f-sprint').value=p.sprint;
+  document.getElementById('f-status').value=p.status;
+  document.getElementById('f-pct').value=p.pct;
+  document.getElementById('f-comment').value=p.comment;
+  document.getElementById('f-defects').value=p.defects;
+  showModal('insertModal');
+}
+
+function deletePBI(id){
+  if(!confirm('Delete PBI '+id+'?'))return;
+  pbis=pbis.filter(function(x){return x.pbi!==id;});
+  renderTracker();renderMetrics();renderDashTable();
+  toast('PBI '+id+' deleted');
+}
+
+function saveSticky(){
+  var s={id:Date.now(),author:document.getElementById('sn-author').value,color:document.getElementById('sn-color').value,text:document.getElementById('sn-text').value,date:'May 25'};
+  if(!s.text.trim()){toast('Note text is empty');return;}
+  stickies.unshift(s);
+  document.getElementById('sn-text').value='';
+  hideModal('stickyModal');
+  renderDashStickies();
+  toast('Note added!');
+}
+
+function deleteSticky(id){
+  stickies=stickies.filter(function(s){return s.id!==id;});
+  renderDashStickies();
+  toast('Note removed');
+}
+
+function saveDefect(){
+  var d={id:document.getElementById('d-id').value,pbi:document.getElementById('d-pbi').value,title:document.getElementById('d-title').value,sev:document.getElementById('d-sev').value,assignee:document.getElementById('d-assignee').value,status:'Open',raised:'May 25',resolved:'—'};
+  if(!d.id||!d.title){toast('Defect ID and title required');return;}
+  defects.unshift(d);
+  hideModal('defectModal');
+  renderDefects();renderMetrics();
+  document.getElementById('nb-defects').textContent=defects.filter(function(x){return x.status==='Open';}).length;
+  toast('Defect '+d.id+' logged!');
+}
+
+function saveReminder(){
+  var r={id:Date.now(),icon:document.getElementById('rm-type').value,text:document.getElementById('rm-text').value,sub:'Added manually',time:document.getElementById('rm-time').value,cls:'info'};
+  if(!r.text){toast('Reminder text is empty');return;}
+  reminders.unshift(r);
+  hideModal('reminderModal');
+  renderDashReminders();
+  document.getElementById('nb-rem').textContent=reminders.filter(function(r){return r.cls==='warn';}).length;
+  toast('Reminder added!');
+}
+
+function deleteReminder(id){
+  reminders=reminders.filter(function(r){return r.id!==id;});
+  renderRemindersPage();renderDashReminders();
+  toast('Reminder removed');
+}
+
+function syncAzdo(){
+  toast('Syncing with Azure DevOps...');
+  setTimeout(function(){
+    pbis.forEach(function(p){p.azdo=p.status==='Completed'?'Synced':p.status==='OOS'?'N/A':'Active';});
+    renderAzdoRows('azdo-rows-dash');
+    renderDashTable();
+    toast('AzDo sync complete — '+pbis.length+' PBIs updated');
+  },1200);
+}
+
+function exportCSV(){
+  var rows=[['PBI','UID','Type','Assignee','Sprint','Status','%','Comment','AzDo']];
+  pbis.forEach(function(p){rows.push([p.pbi,p.uid,p.type,p.assignee,p.sprint,p.status,p.pct,p.comment,p.azdo]);});
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='DSR_Sprint11_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  toast('CSV exported!');
+}
+
+function sendEmailDigest(){
+  toast('Email digest sent to Danie, Revathi, Mary Ann!');
+}
+
+function globalSearch(q){
+  if(!q){renderDashTable();return;}
+  q=q.toLowerCase();
+  var results=pbis.filter(function(p){return p.pbi.includes(q)||p.uid.toLowerCase().includes(q)||p.assignee.toLowerCase().includes(q)||p.comment.toLowerCase().includes(q);});
+  document.getElementById('dash-table-body').innerHTML=results.map(function(r){
+    return '<tr><td class="mono">'+r.pbi+'</td><td style="font-size:12px">'+r.uid+'</td><td>'+r.assignee+'</td><td><span class="pill '+statusClass(r.status)+'">'+r.status+'</span></td><td>'+pbar(r.pct)+'</td><td style="font-size:11px">'+azdoDot(r.azdo)+r.azdo+'</td></tr>';
+  }).join('')||'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text3);font-size:12px">No results for "'+q+'"</td></tr>';
+}
+
+function initNudge(){
+  nudgePBIs=pbis.filter(function(p){return p.status==='In Progress';});
+  nudgeIdx=0;nudgeStatus='In Progress';
+  renderNudge();
+}
+
+function renderNudge(){
+  if(nudgeIdx>=nudgePBIs.length){
+    document.getElementById('popup-body-inner').innerHTML='<div style="text-align:center;padding:20px"><i class="ti ti-circle-check" style="font-size:36px;color:#1d9e75;display:block;margin-bottom:8px"></i><div style="font-size:13px;font-weight:600;color:var(--text)">All PBIs updated!</div><div style="font-size:11px;color:var(--text3);margin-top:4px">Great job. DSR is up to date.</div></div>';
+    document.getElementById('popup-progress').textContent='Done';
+    return;
+  }
+  var p=nudgePBIs[nudgeIdx];
+  document.getElementById('popup-body-inner').innerHTML=
+    '<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:2px">'+p.pbi+'</div>'+
+    '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">'+p.uid+'</div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;font-style:italic">Last: '+p.comment.substring(0,80)+'...</div>'+
+    '<textarea id="nudge-comment" placeholder="Today\'s update..." style="width:100%;font-size:12px;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font-family:var(--font);resize:none;height:68px;outline:none"></textarea>'+
+    '<div class="status-picks" style="margin-top:8px">'+
+    '<span class="sp done '+(nudgeStatus==='Completed'?'active-pick':'')+'" onclick="nudgeSetStatus(\'Completed\',this)">Completed</span>'+
+    '<span class="sp prog '+(nudgeStatus==='In Progress'?'active-pick':'')+'" onclick="nudgeSetStatus(\'In Progress\',this)">In Progress</span>'+
+    '<span class="sp block '+(nudgeStatus==='Blocked'?'active-pick':'')+'" onclick="nudgeSetStatus(\'Blocked\',this)">Blocked</span>'+
+    '</div>';
+  document.getElementById('popup-progress').textContent='PBI '+(nudgeIdx+1)+' of '+nudgePBIs.length;
+}
+
+function nudgeSetStatus(s,el){
+  nudgeStatus=s;
+  document.querySelectorAll('.sp').forEach(function(x){x.classList.remove('active-pick');});
+  el.classList.add('active-pick');
+}
+
+function nudgeSave(){
+  if(nudgeIdx>=nudgePBIs.length){hideModal('reminderPopup');return;}
+  var p=nudgePBIs[nudgeIdx];
+  var comment=document.getElementById('nudge-comment');
+  if(comment&&comment.value.trim()){
+    var idx=pbis.findIndex(function(x){return x.pbi===p.pbi;});
+    if(idx>=0){pbis[idx].comment='05/25: '+comment.value.trim();pbis[idx].status=nudgeStatus;}
+  }
+  nudgeIdx++;nudgeStatus='In Progress';
+  renderNudge();
+  renderDashTable();renderMetrics();
+  if(nudgeIdx>=nudgePBIs.length)toast('All PBIs updated!');
+}
+
+function nudgeSkip(){nudgeIdx++;nudgeStatus='In Progress';renderNudge();}
+
+function toast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2800);
+}
+
+document.getElementById('reminderPopup').addEventListener('click',function(e){if(e.target===this)hideModal('reminderPopup');});
+['insertModal','stickyModal','importModal','defectModal','reminderModal'].forEach(function(id){
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)hideModal(id);});
+});
+
+document.getElementById('reminderPopup').querySelector('.modal-bg')&&null;
+
+var origShowModal=showModal;
+window.showModal=function(id){
+  if(id==='reminderPopup')initNudge();
+  origShowModal(id);
+};
+
+renderMetrics();
+renderDashTable();
+renderDashStickies();
+renderDashReminders();
+renderAzdoRows('azdo-rows-dash');
+</script>
+</body>
+</html>
